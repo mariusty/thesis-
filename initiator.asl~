@@ -1,0 +1,64 @@
+price (X) :- .random(R)& X = math.round(100*R).
+
+!start([fix(tv),fix(pc),fix(dsdfsf)]). 
+
++!start([]).
++!start([fix(T)|R])
+    <-  .my_name(Me);
+    	//.include("initiator.asl",T); 
+        !startCNP(fix(T), Me);
+        //.print(T);
+        //?cyclefinished(M);
+        //.print(M, " after");
+        //.wait({+cyclefinished(_)});
+        !start(R).
+        
++!startCNP(fix(T), O) 
+    <-  -+agentParent(O);
+    	.broadcast(tell, cnp_started); 
+        .wait(3000); 
+        .findall(B,intro(B)[source(A)],LD);
+        ?price(P);
+        for (.member(M,LD) ) {
+			.send(M,tell,cfp(T, P));
+		 }
+        .wait(2000);
+        .findall(offer(Res,Sureness,Reput,Task,Aaaa), propose(Task,Sureness, Reput, Res)[source(Aaaa)],LL); 
+        .print("Proposes  ",LL);
+        !contract(T, LL).
+
++!contract(Ns, L) 
+        <-  L \== []; // constraint the plan execution to at least one offer TODO: CHOSE RANDOM NUMBER OF PARTICIPANTS
+            .max(L,offer(WOf,Sm,Km,Ta,WAg)); // sort offers , the first is the best
+            .print("Winner is ",WAg);
+            !announce_result(Ns,L, WAg).  
+
++!feedback (Ns, Predication ,[res(P,S,R,Ag)]) 
+	<- if (Predication < R) { 
+	 	Newreput = R+P/10;
+       .send(Ag,tell,good_result(Newreput));
+     }
+     if (Predication >= R) { 
+     	Newreput = R-P/10;
+       .send(Ag,tell,bad_result(Newreput));
+     }.
+
+
++!announce_result (Ns,[offer(Predication,S,R,_,Ag)|T], Ag) 
+       <- .send(Ag,tell,accept_proposal(S,R)); 
+       .wait(2000);
+       .findall(res(P,S,R,Ag), result(P, S, R)[source(Ag)], PP);
+       //.print("Result returned   ", PP);
+       !feedback(Ns, Predication, PP);
+       !announce_result(Ns, T, Ag).
+       
++!announce_result(Ns,[offer(_,_,_,_,A)|T], Ag) 
+       <- .send(A,tell,reject_proposal(Ns));
+       !announce_result(Ns, T, Ag). 
+       
++!announce_result(Ns,[],_).
+		//<- //?agentParent (SendTo);
+    	//.send(SendTo,tell,cyclefinished(Ns));
+    	//-+cyclefinished(Ns);
+    	//?cyclefinished(K);
+    	//.print(K).

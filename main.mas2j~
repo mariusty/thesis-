@@ -1,0 +1,7 @@
+MAS contract_net_protocol {
+    agents:
+        normal #2;
+        risky #2;
+        dangerous #2;
+        company_B #2;
+}
