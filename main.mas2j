@@ -3,5 +3,4 @@ MAS trustreputation {
         normal #2;
         risky #2;
         dangerous #2;
-        initiator #1;
 }
