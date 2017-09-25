@@ -4,13 +4,15 @@ random (Ra) :- .random(R)& Ra = math.round(100*R).
 
 +!st
 	<-  ?random(R);
-	N = math.round(1 + R / 10); //random number of tasks from 1 to 11,
+	N = math.round(R / 10); //random number of tasks from 0 to 11,
 	.print(N);
-	.findall(X, .random(X,N), L)  //generate random tasks ids
-    for ( .member(X,L) ) { 	
-    	K = math.round(X*100);
-        !tasks ([task(K)]); 
-     }.
+	if (N > 0) { 
+		.findall(X, .random(X,N), L)  //generate random tasks ids
+		for ( .member(X,L) ) { 	
+			K = math.round(X*100);
+			!tasks ([task(K)]); 
+		}
+	}.
 
 +!tasks([]).
 +!tasks([task(T)|R])
@@ -67,6 +69,7 @@ random (Ra) :- .random(R)& Ra = math.round(100*R).
 +!announce_result(_,[],_).
 +started [source(A)] : not first(_)
     <-  +first(test);
+    	-+risk(0);
     	?random (R1);
     	?random (R2);
     	?random (R3);
@@ -74,50 +77,18 @@ random (Ra) :- .random(R)& Ra = math.round(100*R).
     	?random (R5);
     	R = math.average([R1,R2,R3,R4,R5]);
     	-+reputation(R);
-    	//.println("REPUTATION 1 = ",R);
     	.my_name(Me);
     	.send(A,tell,intro(Me)). 
 
 +started [source(A)] 
     <-  .wait(1000);
     	?reputation(R);
-    	//.println("REPUTATION 2 = ",R);
     	.my_name(Me);
     	.send(A,tell,intro(Me)). 
-
-+request(Task, P) [source(A)] : not participating(_)
-    <- 	?reputation(R);
-    	-+risk(0);
-    	if (R >= P) { //PREFERABLE - 0.5R - 1.5R, DOESNT TAKE <0.5R
-			if (P >= R*0.5 ) { //Price is between 0.5 and 1 R -DOESN'T WANT TO PARTICIPATE
-				S = 0;
-			}
-			else { 
-				S = 100;
-			}
-		}
-		else { 
-			if (P >= R*1.5 ) { 
-				S = P-R;
-			}
-			else { //Price is between 1 and 1.5 R
-				S = 100; 
-			}
-		}
-		if (S >0) { 
-				 Res = math.round(R*0.5 + S*0.5);
-				 .println("My reputation is ",R, "   sureness = ", S,"  price = ", P,"   for task = ", Task, " send to ", A, "   EXPECTED RESULT ", Res);
-				 .send(A,tell, propose(Task, S, R, Res));
-				 +participating(Task)
-		}
-		else{ 
-			.println("I'm not interested in ", Task, ", my reputation is ",R,"  price = ", P );
-		}.
         
 +request(Task, P) [source(A)] 
     <- 	?reputation (R);
 		?risk(Risk);
-		//.print("RISK =  ", Risk);
     	if (R >= P) { //PREFERABLE - 0.5R - 1.5R, DOESNT TAKE <0.5R
 			if (P >= R*0.5 ) { //Price is between 0.5 and 1 R - DOESN'T WANT TO PARTICIPATE
 				S = 0;
@@ -142,7 +113,6 @@ random (Ra) :- .random(R)& Ra = math.round(100*R).
 				 Res = math.round(R*0.5 + S*0.5);
 				 .println("My reputation is ",R, "   sureness = ", S,"  price = ", P,"   for task = ", Task, " send to ", A, "   EXPECTED RESULT ", Res);
 				 .send(A,tell, propose(Task, S, R, Res));
-				 +participating(Task)
 		}
 		else{ 
 			.println("I'm not interested in ", Task, ", my reputation is ",R,"  price = ", P );
@@ -153,9 +123,8 @@ random (Ra) :- .random(R)& Ra = math.round(100*R).
     .print("My proposal won! I made it for ",P," while sure = ",S," reputation = ",R," source ", A);
     .send (A,tell,result(P, S, R)).
 
-+reject (Ns) : participating (Ns)
-    <- 
-    ?risk(Risk);
++reject (Ns) 
+    <- ?risk(Risk);
     if (Risk <90 ) { 
 		K = Risk + 10;
 		-+risk(K);
