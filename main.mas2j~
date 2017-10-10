@@ -1,6 +1,6 @@
 MAS trustreputation {
     agents:
-        normal #2;
-        risky #2;
-        prudent #2;
+        normal #5;
+        risky #5;
+        prudent #5;
 }
